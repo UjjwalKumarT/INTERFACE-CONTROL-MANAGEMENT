@@ -1,0 +1,170 @@
+#include <stdio.h>
+#include <stdlib.h>
+void convertArrayToStructure();
+int AEDData[32]= {0xFFFF};
+enum Validity {valid, invalid};//user defied datatype that cosist of iteger values,it provides meaigful ames of these values
+int  CalculateChecksum( int header, int SubsystemId, int ValidBytes, int PacketNo,
+                  int NoOfPackets, int Data0,int Data1,int Data2,int Data3,int Data4,int Data5,int Data6,int Data7,int Data8,int Data9, int SystemAddress,int Footer);
+
+void validateData(int header, int SubsystemId, int ValidBytes, int PacketNo,
+                  int NoOfPackets, int Data0,int Data1,int Data2,int Data3,int Data4,int Data5,int Data6,int Data7,int Data8,int Data9, int SystemAddress,int Footer, int checksum);
+void Assign1553BMessage();
+
+int SAR_Data[256];
+
+int ECU_Data[256];
+
+int ESU_Data[256];
+
+int Engine_Data[256];
+
+typedef struct message
+    {
+
+     short int header;
+     char  subsystemId ;
+     char  ValidBytes;
+     char PacketNo;
+     char NoOfPacket;
+     int Data0;
+     int Data1;
+     int Data2;
+     int Data3;
+     int Data4;
+     int Data5;
+     int Data6;
+     int Data7;
+     int Data8;
+     int Data9;
+     short int SystemAddress;
+     short int Checksum;
+     short int Footer;
+}msg;
+
+int main(){
+
+    enum Validity MessageType;
+    struct message MSG;
+    Assign1553BMessage();
+    // Assign the data for AED Data as you like so that it can be extracted
+
+    convertArrayToStructure(&MSG);
+
+    MessageType = validateData(MSG.header,MSG.subsystemId, MSG.ValidBytes,MSG.PacketNo,MSG.NoOfPacket, MSG.Data0,MSG.Data1,MSG.Data2,MSG.Data3,MSG.Data4,MSG.Data5,MSG.Data6,MSG.Data7,MSG.Data8,MSG.Data9, MSG.SystemAddress,MSG.Footer,MSG.Checksum);
+    if(MessageType==Valid){
+
+       // What is system ID
+        if ( Subsystem==100)
+            SAR_Data  == All data belongs to SAR_Data;
+            if ( Subsystem == 200)
+
+                All data belongs to ESU_Data
+
+
+
+
+
+
+
+    }
+
+    printf( " Message Type %d", &MessageType);
+}
+
+
+void convertArrayToStructure(struct message *msg){
+
+    msg->header = AEDData[0];
+    msg->subsystemId= AEDData[1]& 0XFF008;
+    msg->ValidBytes = AEDData[1]& 0X00FF;
+    msg->PacketNo = AEDData[2]& 0X00FF;
+
+    msg->NoOfPacket = AEDData[2]& 0XFF00;
+    msg->Data0 = AEDData[3]& 0X00FF;
+    msg->Data1= AEDData[4]& 0XFF00;
+    msg->Data2 = AEDData[5]& 0X00FF;
+    msg->Data3 = AEDData[6]& 0XFF00;
+    msg->Data4 = AEDData[7]& 0X00FF;
+    msg->Data5 = AEDData[8]& 0XFF00;
+    msg->Data6 = AEDData[9]& 0X00FF;
+    msg->Data7 = AEDData[10]& 0XFF00;
+
+    msg->Data8 = AEDData[11]& 0X00FF;
+    msg->Data9= AEDData[12]& 0XFF00;
+    msg->SystemAddress =AEDData[13]& 0X00FF;
+    msg->Checksum = AEDData[14]& 0XFF00;
+    msg->Footer = AEDData[15]& 0X00FF;
+    printf("Header %x", msg->header);
+    printf("subsystemID %d", msg->subsystemId);
+    printf("validBytes %d", msg->ValidBytes);
+    printf("PacketNo. %d",msg->PacketNo);
+    printf("NoOfPacket %d",msg->NoOfPacket);
+    printf("Data0 %d", msg->Data0);
+    printf("Data1 %d", msg->Data1);
+    printf("Data2 %d", msg->Data2);
+    printf("Data3 %d", msg->Data3);
+    printf("Data4 %d", msg->Data4);
+    printf("Data5 %d", msg->Data5);
+    printf("Data6 %d", msg->Data6);
+    printf("Data7 %d", msg->Data7);
+    printf("Data8 %d", msg->Data8);
+    printf("Data9 %d", msg->Data9);
+    printf("SystemAddress %hi",msg->SystemAddress);
+    printf("Checksum %hi",msg->Checksum);
+    printf("Footer %hi",msg->Footer);
+
+
+}
+int  CalculateChecksum( int header, int SubsystemId, int ValidBytes, int PacketNo,
+                  int NoOfPackets, int Data0,int Data1,int Data2,int Data3,int Data4,int Data5,int Data6,int Data7,int Data8,int Data9, int SystemAddress,int Footer){
+
+    int CalculatedChecksum;
+    CalculatedChecksum = (Header ^SubsystemId^ValidBytes^PacketNo^NoOfPackets^Data0,
+                          ^Data1^Data2^Data3^Data4^Data5,
+                          ^Data6^Data7^Data8^Data9,^SystemAddress);
+
+    return CalculatedChecksum;
+}
+
+
+enum Validity validateData(int header, int SubsystemId, int ValidBytes, int PacketNo,
+                  int NoOfPackets, int Data0,int Data1,int Data2,int Data3,int Data4,int Data5,
+                          int Data6,int Data7,int Data8,int Data9, int SystemAddress,int Footer, int checksum){
+
+
+    enum Validity messageValidity;
+    int newChecksum;
+    newChecksum = CalculateChecksum(header, SubsystemId,ValidBytes,PacketNo,NoOfPackets,
+                                    int Data0,int Data1,int Data2,int Data3,int Data4,int Data5,
+                          int Data6,int Data7,int Data8,int Data9,SystemAddress );
+
+    if ( header != 0xAAAA) && ( Footer != 0x9999) && (checksum != newChecksum)
+        messageValidity = invalid;
+    else
+        messageValidity = valid;
+   return messageValidity;
+}
+
+void Assign1553BMessage(){
+    AEDData[0] = 0xAAAA;  // Header
+    AEDData[1] = (0xFF64) <<8;   // System IF 100
+    AEDData[1] = (0xFF02) >>8;   // No of valid byte
+    AEDData[2] = (0xFF01) <<8; // Packet N0
+    AEDData[2] = (0xFF02) >>8; // N0 OF PACKET
+    AEDData[3] = (0xFF34) <<8; //DATA0
+    AEDData[3] = (0xFF45) >>8; //DATA1
+    AEDData[4] = (0xFF12) <<8; // DATA2
+    AEDData[4] = (0xFF21) >>8; //DATA3
+    AEDData[5] = (0xFF32) <<8; //data4
+    AEDData[5] = (0xFF45) >>8; //data5
+    AEDData[6] = (0xFF63) <<8; //data6
+    AEDData[6] = (0xFF84) >>8; //data7
+    AEDData[7] = (0xFF54) <<8; //data8
+    AEDData[7] = (0xFF73) >>8; //data9
+    AEDData[8] = (0xFF54) <<8; //SsystemAddress
+    AEDData[8] = (0xFF43) >>8; //Footer
+    AEDData[9] = (0xFF31) <<8; //ch ecksum
+
+// Added other values here
+
+}
